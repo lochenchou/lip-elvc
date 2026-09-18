@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lip-Driven EL Voice Conversion</title>
+<meta name="description" content="Demo page: Lip-Driven Voice Conversion for Mandarin Electrolaryngeal Speech (ICASSP 2027 submission).">
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #5c6370;
+    --line: #e3e6ea;
+    --card: #f7f8fa;
+    --accent: #1f5fbf;
+    --accent-soft: #e8f0fc;
+    --hl: #fff7e0;
+    --hl-line: #f0c96a;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121417; --fg: #e6e8eb; --muted: #9aa3ad; --line: #2a2f36;
+      --card: #1a1e23; --accent: #6ea3ff; --accent-soft: #1b2740;
+      --hl: #2c2612; --hl-line: #8a6d1f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #121417; --fg: #e6e8eb; --muted: #9aa3ad; --line: #2a2f36;
+    --card: #1a1e23; --accent: #6ea3ff; --accent-soft: #1b2740;
+    --hl: #2c2612; --hl-line: #8a6d1f;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg); }
+  body { font: 16px/1.6 -apple-system, "Segoe UI", Roboto, "Noto Sans TC", "Helvetica Neue", Arial, sans-serif; }
+  main { max-width: 1180px; margin: 0 auto; padding: 32px 16px 80px; }
+  a { color: var(--accent); }
+  h1 { font-size: 1.9rem; line-height: 1.25; margin: 0 0 12px; text-align: center; }
+  h2 { font-size: 1.35rem; margin: 48px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  h3 { font-size: 1.05rem; margin: 20px 0 8px; }
+  p { margin: 0 0 12px; }
+  .authors { text-align: center; margin-bottom: 4px; }
+  .affil { text-align: center; color: var(--muted); font-size: 0.92rem; margin-bottom: 14px; }
+  .links { text-align: center; margin-bottom: 8px; }
+  .links a { display: inline-block; margin: 4px 6px; padding: 6px 14px; border: 1px solid var(--accent); border-radius: 999px; text-decoration: none; font-size: 0.9rem; }
+  .venue { text-align: center; color: var(--muted); font-size: 0.9rem; }
+  .abstract { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; text-align: justify; }
+  .callout { background: var(--accent-soft); border-left: 4px solid var(--accent); border-radius: 6px; padding: 14px 18px; margin: 16px 0; }
+  .callout strong { color: var(--accent); }
+  figure { margin: 16px 0; text-align: center; }
+  figure img { max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+  figcaption { color: var(--muted); font-size: 0.9rem; margin-top: 8px; text-align: left; }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin: 14px 0; }
+  .step { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .step .n { font-family: var(--mono); color: var(--accent); font-weight: 700; margin-bottom: 4px; }
+  .step .t { font-weight: 600; margin-bottom: 6px; }
+  .step p { font-size: 0.93rem; color: var(--muted); margin: 0; }
+
+  table.res { border-collapse: collapse; margin: 12px auto; font-size: 0.93rem; }
+  table.res th, table.res td { padding: 6px 14px; border-bottom: 1px solid var(--line); text-align: center; }
+  table.res th { border-bottom: 2px solid var(--fg); }
+  table.res td:first-child, table.res th:first-child { text-align: left; }
+  table.res tr.hl td { background: var(--hl); font-weight: 600; }
+  .small { color: var(--muted); font-size: 0.88rem; }
+
+  /* demo grid */
+  .demo-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table.demo { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 900px; font-size: 0.9rem; }
+  table.demo th { position: sticky; top: 0; background: var(--bg); z-index: 2; }
+  table.demo thead tr.groups th { color: var(--muted); font-weight: 500; font-size: 0.82rem; letter-spacing: .02em; text-transform: uppercase; border-bottom: 1px solid var(--line); padding: 4px 6px; }
+  table.demo thead tr.labels th { padding: 8px 6px; border-bottom: 2px solid var(--fg); vertical-align: bottom; }
+  table.demo th .note { display: block; color: var(--muted); font-weight: 400; font-size: 0.78rem; }
+  table.demo th.hl, table.demo td.hl { background: var(--hl); }
+  table.demo th.hl { box-shadow: inset 0 -2px 0 var(--hl-line); }
+  table.demo td { padding: 10px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; text-align: center; }
+  table.demo td.sent { text-align: left; white-space: nowrap; }
+  table.demo td.sent .id { font-family: var(--mono); color: var(--muted); font-size: 0.8rem; display: block; }
+  table.demo td.sent .zh { font-size: 1.02rem; }
+  table.demo video { width: 150px; max-width: 100%; border-radius: 6px; background: #000; display: block; margin: 0 auto; }
+  table.demo audio { width: 150px; max-width: 100%; display: block; margin: 0 auto; }
+  table.demo .score { display: block; margin-top: 4px; font-family: var(--mono); font-size: 0.78rem; color: var(--fg); }
+  table.demo .score b { font-weight: 600; }
+  table.demo .hyp { display: block; font-size: 0.78rem; color: var(--muted); max-width: 150px; margin: 2px auto 0; white-space: normal; line-height: 1.3; }
+  table.demo td.sent .tag { display: block; color: var(--muted); font-size: 0.76rem; white-space: normal; max-width: 180px; }
+  .recog { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; font-size: 0.86rem; color: var(--muted); margin: 10px 0 14px; }
+  .recog code { font-family: var(--mono); color: var(--fg); }
+  table.demo .missing { color: var(--muted); font-size: 0.8rem; font-family: var(--mono); }
+  .placeholder { border: 1px dashed var(--line); border-radius: 10px; padding: 18px 20px; color: var(--muted); background: var(--card); }
+  ol.refs { font-size: 0.9rem; padding-left: 1.4em; }
+  ol.refs li { margin-bottom: 6px; }
+  details.bib { font-size: 0.85rem; color: var(--muted); }
+  details.bib pre { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; font-size: 0.78rem; color: var(--fg); }
+  table.demo td.sent .py { display: block; color: var(--muted); font-size: 0.82rem; font-style: italic; white-space: normal; max-width: 200px; }
+  footer { margin-top: 60px; color: var(--muted); font-size: 0.85rem; text-align: center; }
+  /* tablet: keep horizontal scroll, pin the sentence column */
+  table.demo td.sent, table.demo th:first-child { position: sticky; left: 0; background: var(--bg); z-index: 1; box-shadow: 2px 0 0 var(--line); }
+  table.demo thead th:first-child { z-index: 3; }
+  .swipe-hint { display: none; color: var(--muted); font-size: 0.82rem; margin: 0 0 6px; }
+  @media (max-width: 1100px) { .swipe-hint { display: block; } }
+
+  /* phone: one card per sentence, systems stacked */
+  @media (max-width: 700px) {
+    h1 { font-size: 1.45rem; }
+    .swipe-hint { display: none; }
+    .demo-wrap { overflow: visible; }
+    table.demo, table.demo tbody, table.demo tr, table.demo td { display: block; min-width: 0; width: 100%; }
+    table.demo thead { display: none; }
+    table.demo tr { border: 1px solid var(--line); border-radius: 10px; margin-bottom: 14px; padding: 6px 10px 2px; background: var(--card); }
+    table.demo td { border-bottom: 1px solid var(--line); text-align: left; padding: 8px 0; position: static; box-shadow: none; background: transparent; }
+    table.demo td:last-child { border-bottom: none; }
+    table.demo td.sent { white-space: normal; padding-bottom: 10px; }
+    table.demo td.sent .zh { font-size: 1.1rem; }
+    table.demo td.sent .py, table.demo td.sent .tag { max-width: none; }
+    table.demo td.hl { background: var(--hl); margin: 0 -10px; padding-left: 10px; padding-right: 10px; }
+    table.demo td[data-label]::before { content: attr(data-label); display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; }
+    table.demo td .cell-note { display: block !important; font-size: 0.74rem; color: var(--muted); margin: -2px 0 4px; }
+    table.demo video { width: 100%; max-width: 260px; margin: 0; }
+    table.demo audio { width: 100%; max-width: none; margin: 0; }
+    table.demo .hyp { margin: 2px 0 0; max-width: none; }
+  }
+</style>
+</head>
+<body>
+<main>
+
+<!-- ============================ HEADER ============================ -->
+<h1>Lip-Driven Voice Conversion for Mandarin Electrolaryngeal Speech</h1>
+<p class="authors">
+  Chen-Chou Lo<sup>1</sup>, Ming-Chi Yen<sup>2</sup>, Yu Tsao<sup>3</sup>, Hsin-Min Wang<sup>2</sup>
+</p>
+<p class="affil">
+  <sup>1</sup>Department of Electrical Engineering, Yuan Ze University, Taiwan<br>
+  <sup>2</sup>Institute of Information Science, Academia Sinica, Taiwan<br>
+  <sup>3</sup>Research Center for Information Technology Innovation, Academia Sinica, Taiwan
+</p>
+<p class="links">
+  <!-- TODO: arXiv 上傳後把 href 換成網址；Paper / Code 按鈕之後需要再加回來 -->
+  <a href="#" title="arXiv link coming soon">arXiv</a>
+</p>
+<p class="venue">Submitted to ICASSP 2027</p>
+
+<!-- ============================ ABSTRACT ============================ -->
+<h2>Abstract</h2>
+<div class="abstract">
+Electrolaryngeal (EL) speech is hard to understand because the mechanical
+excitation of the device damages the segmental cues at the moment of
+production. We estimate that signal from lip motion instead, with no acoustic
+input at inference. A trainable AV-HuBERT extractor, fused with a lip encoder
+and adapted end to end with the back-end, predicts the WavLM features an
+audio-driven system would read. From video alone the proposed system reaches
+62.3% character error rate (CER) on held-out sentences from one speaker,
+against 74.0% for the unprocessed EL recordings. It leads two audio-driven
+baselines by 7.2 and 4.2 points of CER and outperforms prior audio-visual
+systems on a shared subset. The two audio baselines share its back-end and
+its vocoder, so the difference comes from the input alone: WavLM features
+predicted from video can stand in for those extracted from the EL waveform. Its errors are also
+closer to the reference than those of the audio baselines, and fall mostly on
+the syllable onset, on consonants that the lips do not show. That is the limit
+of video alone.
+</div>
+
+<!-- ============================ THE QUESTION ============================ -->
+<h2>Can lip motion alone replace the damaged EL signal?</h2>
+<div class="callout">
+  <strong>The problem of EL speech.</strong> The electrolarynx damages the acoustic signal
+  before it is recorded, but it does not touch the articulators. How much of a
+  normal-speech (NL) utterance can be recovered from the
+  <strong>EL speaker's lip motion alone</strong>, with no audio at all?
+</div>
+<p>
+  Previous audio-driven approaches (Audio VTN&nbsp;<a href="#ref-vtn">[1]</a>,
+  Audio ETN&nbsp;<a href="#ref-etn">[2]</a>) and our proposed system share the
+  same seq2seq back-end and the same WavLM HiFi-GAN vocoder. The only thing
+  that changes across these systems is what the back-end reads: WavLM
+  features from the damaged EL waveform, or WavLM features predicted from the
+  silent lip video. The prior audio-visual system (AVH-WS-FT&nbsp;<a href="#ref-chien">[3]</a>) is a separate,
+  complete pipeline with its own back-end and vocoder. It also extracts its
+  visual features with a fine-tuned AV-HuBERT&nbsp;<a href="#ref-avhubert">[4]</a>, so the visual backbone is not
+  what separates it from ours; the difference is that it additionally reads the
+  EL waveform, while ours reads the video only. Listen to the
+  <em>EL silent lip ROI</em> column first. That is the entire input to our
+  proposed system.
+</p>
+
+<!-- ============================ METHOD ============================ -->
+<h2>Proposed pipeline</h2>
+<figure>
+  <img src="assets/structure.png" alt="Proposed lip-driven pipeline">
+  <figcaption>
+    (a) The AV-HuBERT extractor E<sub>v</sub> is distilled from a frozen audio
+    teacher on normal speech. (b) At inference the system receives no acoustic
+    input. Two visual pathways read the same lip pixels and are fused in the
+    latent space of the lip encoder, which predicts the WavLM features of the
+    simultaneously recorded EL take. The back-end converts them toward NL
+    features, and only the vocoder generates a waveform.
+  </figcaption>
+</figure>
+
+<div class="steps">
+  <div class="step">
+    <div class="n">1</div>
+    <div class="t">Visual front-end: lip video → EL WavLM features</div>
+    <p>A trainable AV-HuBERT&nbsp;<a href="#ref-avhubert">[4]</a> visual extractor, distilled from an audio teacher on
+    normal speech (TMSV&nbsp;<a href="#ref-tmsv">[5]</a>), is fused with a
+    ResNet-18 + Transformer lip encoder.
+    The fused front-end predicts the WavLM-Large (layer 6) features of the EL
+    recording made at the same moment.</p>
+  </div>
+  <div class="step">
+    <div class="n">2</div>
+    <div class="t">Seq2seq back-end: EL WavLM → NL WavLM</div>
+    <p>An autoregressive Transformer (VTN / ETN recipe) converts the predicted
+    features toward the target normal speaker and absorbs the duration mismatch,
+    since EL speech is slower. It is initialized from the audio ETN&nbsp;<a href="#ref-etn">[2]</a> baseline and
+    fine-tuned end to end with the front-end on 240 parallel pairs. The back-end,
+    the baselines and the vocoder are built on the open-source
+    <a href="https://github.com/unilight/seq2seq-vc">seq2seq-vc</a> toolkit.</p>
+  </div>
+  <div class="step">
+    <div class="n">3</div>
+    <div class="t">Vocoder: NL WavLM → waveform</div>
+    <p>A WavLM HiFi-GAN trained on COSPRO normal speech, kept frozen and shared
+    by our audio baselines and our proposed system. Nothing on the audio side is
+    adapted to the EL speaker.</p>
+  </div>
+</div>
+
+<h3>Main results (40 held-out sentences, one speaker)</h3>
+<table class="res">
+  <thead><tr><th>System</th><th>Input<br>Modality</th><th>CER ↓</th><th>SER ↓</th></tr></thead>
+  <tbody>
+    <tr><td>Natural NL speech (ceiling)</td><td>—</td><td>2.3</td><td>1.0</td></tr>
+    <tr><td>Unprocessed EL speech</td><td>A</td><td>74.0</td><td>70.3</td></tr>
+    <tr><td>Audio VTN <a href="#ref-vtn">[1]</a></td><td>A</td><td>69.5</td><td>66.0</td></tr>
+    <tr><td>Audio ETN <a href="#ref-etn">[2]</a></td><td>A</td><td>66.5</td><td>62.5</td></tr>
+    <tr><td>ResNet front-end only</td><td>V</td><td>82.8</td><td>80.0</td></tr>
+    <tr><td>AVH extractor only</td><td>V</td><td>67.3</td><td>64.5</td></tr>
+    <tr class="hl"><td>Proposed (both pathways)</td><td>V</td><td>62.3</td><td>57.5</td></tr>
+    <tr><td>&nbsp;&nbsp;extractor frozen</td><td>V</td><td>75.5</td><td>71.0</td></tr>
+  </tbody>
+</table>
+<p class="small" style="text-align:center">
+  A: audio-driven, reads the EL waveform; V: video-driven, no acoustic input at
+  inference. Audio VTN and Audio ETN are our own reimplementations of [1] and [2] on WavLM
+  features; VTN and ETN as published operate on mel spectrograms. CER from Whisper
+  large-v3; SER over pinyin syllables with tone. The recognizer is not adapted
+  to this speaker or to EL speech, so all rates are high. Compare rows, not
+  absolute values.
+</p>
+
+<!-- ============================ DEMO ============================ -->
+<h2>Demo samples</h2>
+<p>
+  Held-out TMHINT sentences, with Hanyu Pinyin under each transcript. The first
+  two columns are the 96&times;96 lip ROI that the model reads, once muxed with
+  the EL recording and once silent. The EL recording and the NL audio are two
+  separate takes of the same sentence by the same speaker, so their lengths
+  differ. AVH-WS-FT is the fine-tuned audio-visual system of Chien et al.
+  <a href="#ref-chien">[3]</a>, described above. Under every converted sample we print its CER / SER
+  on that sentence and the text the recognizer heard, all from one
+  deterministic re-decode of all systems with the settings below. The sentences
+  are split into two comparisons. In each, the five sentences are ordered by the
+  per-sentence CER gap between the compared system and ours, from our largest
+  win, through a tie, to our largest loss; the gap is printed next to each
+  sentence. We chose them this way on purpose. The paired confidence interval
+  crosses zero against both Audio ETN and AVH-WS-FT, so a demo of only the
+  favorable cases would overstate the result. The first comparison draws on
+  all 40 test sentences; the second is limited to the 18 sentences for which
+  the AVH-WS-FT outputs were available. The failure cases
+  are also where the paper's error analysis points: onsets that the lips do not
+  show. Whisper hears the converted speech in Mandarin; the CER and
+  SER are computed on the Chinese characters and on the pinyin syllables.
+</p>
+<div class="recog" id="recog"></div>
+<div id="demo-sections"></div>
+
+<!-- ============================ ACKNOWLEDGEMENTS ============================ -->
+<h2>Acknowledgements</h2>
+<p>
+  This work builds on the
+  <a href="https://github.com/unilight/seq2seq-vc"><b>seq2seq-vc</b></a> toolkit
+  by Wen-Chin Huang, which provides the VTN and ETN recipes, the seq2seq
+  back-end and the training pipeline that our audio baselines and our proposed
+  system share. We are grateful to the author for releasing it.
+</p>
+
+<!-- ============================ REFERENCES ============================ -->
+<h2>References</h2>
+<ol class="refs">
+  <li id="ref-vtn">W.-C. Huang, T. Hayashi, Y.-C. Wu, H. Kameoka, and T. Toda,
+    “Voice Transformer Network: Sequence-to-sequence voice conversion using Transformer with text-to-speech pretraining,”
+    in <i>Proc. Interspeech</i>, 2020, pp. 4676–4680.</li>
+  <li id="ref-etn">M.-C. Yen, C.-H. Wu, S.-W. Tsai, J.-S. R. Jang, Y. Tsao, A. Hussain, and H.-M. Wang,
+    “Mandarin electrolaryngeal speech voice conversion with speech encoder loss learning and seq2seq modeling,”
+    <i>IEEE Internet of Things Magazine</i>, vol. 8, no. 4, pp. 22–28, 2025.
+    <a href="https://doi.org/10.1109/IOTM.001.2500013">doi:10.1109/IOTM.001.2500013</a></li>
+  <li id="ref-chien">Y.-L. Chien, H.-H. Chen, M.-C. Yen, S.-W. Tsai, H.-M. Wang, Y. Tsao, and T.-S. Chi,
+    “Audio-visual Mandarin electrolaryngeal speech voice conversion,”
+    in <i>Proc. Interspeech</i>, 2023.</li>
+  <li id="ref-avhubert">B. Shi, W.-N. Hsu, K. Lakhotia, and A. Mohamed,
+    “Learning audio-visual speech representation by masked multimodal cluster prediction,”
+    in <i>Proc. ICLR</i>, 2022.
+    <a href="https://openreview.net/forum?id=Z1Qlm11uOM">openreview.net/forum?id=Z1Qlm11uOM</a></li>
+  <li id="ref-tmsv">S.-Y. Chuang, H.-M. Wang, and Y. Tsao,
+    “Improved lite audio-visual speech enhancement,”
+    <i>IEEE/ACM Trans. Audio, Speech, Lang. Process.</i>, vol. 30, pp. 1345–1359, 2022.
+    <a href="https://doi.org/10.1109/TASLP.2022.3153265">doi:10.1109/TASLP.2022.3153265</a></li>
+</ol>
+<details class="bib">
+  <summary>BibTeX</summary>
+<pre>@inproceedings{VTN,
+  author={Wen-Chin Huang and Tomoki Hayashi and Yi-Chiao Wu and Hirokazu Kameoka and Tomoki Toda},
+  title={{Voice Transformer Network: Sequence-to-Sequence Voice Conversion Using Transformer with Text-to-Speech Pretraining}},
+  year=2020,
+  booktitle={Proc. Interspeech},
+  pages={4676--4680},
+}
+
+@ARTICLE{ETN,
+  author={Yen, Ming-Chi and Wu, Chia-Hua and Tsai, Shu-Wei and Jang, Jyh-Shing Roger and Tsao, Yu and Hussain, Amir and Wang, Hsin-Min},
+  journal={IEEE Internet of Things Magazine},
+  title={Mandarin Electrolaryngeal Speech Voice Conversion with Speech Encoder Loss Learning and Seq2seq Modeling},
+  year={2025},
+  volume={8},
+  number={4},
+  pages={22-28},
+  doi={10.1109/IOTM.001.2500013}
+}
+
+@inproceedings{AVVC,
+  author    = {Chien, Yung-Lun and Chen, Hsin-Hao and Yen, Ming-Chi and Tsai, Shu-Wei and Wang, Hsin-Min and Tsao, Yu and Chi, Tai-Shih},
+  title     = {Audio-visual Mandarin electrolaryngeal speech voice conversion},
+  booktitle = {Proc. Interspeech},
+  year      = {2023}
+}
+
+@inproceedings{AVHUBERT,
+  title={Learning Audio-Visual Speech Representation by Masked Multimodal Cluster Prediction},
+  author={Bowen Shi and Wei-Ning Hsu and Kushal Lakhotia and Abdelrahman Mohamed},
+  booktitle={Proc. ICLR},
+  year={2022},
+  url={https://openreview.net/forum?id=Z1Qlm11uOM}
+}
+
+@article{TMSV,
+  author = {Chuang, Shang-Yi and Wang, Hsin-Min and Tsao, Yu},
+  title = {Improved Lite Audio-Visual Speech Enhancement},
+  year = {2022},
+  volume = {30},
+  doi = {10.1109/TASLP.2022.3153265},
+  journal = {IEEE/ACM TASLP},
+  pages = {1345--1359}
+}</pre>
+</details>
+
+<footer>
+  All audio and video on this page are from a healthy speaker who uses the
+  electrolarynx in clinical practice, not a laryngectomee. Samples are for
+  research demonstration only.
+</footer>
+
+</main>
+
+<script src="samples.js"></script>
+<script>
+(function () {
+  const D = window.DEMO;
+  const dir = "samples/";
+
+  function fname(key, id, type) {
+    const ext = type === "audio" ? "wav" : "mp4";
+    return dir + key + "_EL01v4_" + id + "." + ext;
+  }
+
+  function mediaCell(sys, id) {
+    const td = document.createElement("td");
+    if (sys.highlight) td.classList.add("hl");
+    td.dataset.label = (sys.group ? sys.group + " · " : "") + sys.label;
+    if (sys.note) { const n = document.createElement("span"); n.className = "cell-note"; n.textContent = sys.note; n.style.display = "none"; td.appendChild(n); }
+    const src = fname(sys.key, id, sys.type);
+    let el;
+    if (sys.type === "audio") {
+      el = document.createElement("audio");
+      el.controls = true; el.preload = "none";
+    } else {
+      el = document.createElement("video");
+      el.controls = true; el.preload = "metadata"; el.playsInline = true;
+      if (sys.type === "video-muted") { el.muted = true; el.defaultMuted = true; }
+    }
+    el.src = src;
+    el.addEventListener("error", () => {
+      td.innerHTML = '<span class="missing">missing<br>' + src.replace(dir, "") + "</span>";
+    });
+    td.appendChild(el);
+    const sc = D.SCORES && D.SCORES[id] && D.SCORES[id][sys.key];
+    if (sc) {
+      const s1 = document.createElement("span"); s1.className = "score";
+      s1.innerHTML = "CER <b>" + sc[0] + "</b> · SER <b>" + sc[1] + "</b>";
+      s1.title = D.RECOGNIZER.model + " · " + D.RECOGNIZER.weights;
+      td.appendChild(s1);
+      const s2 = document.createElement("span"); s2.className = "hyp";
+      s2.textContent = sc[2] ? "“" + sc[2] + "”" : "(no speech detected)";
+      td.appendChild(s2);
+    }
+    return td;
+  }
+
+  function buildTable(table, systems, ids, gapKey) {
+    // header: group row + label row
+    const thead = document.createElement("thead");
+    const gRow = document.createElement("tr"); gRow.className = "groups";
+    const lRow = document.createElement("tr"); lRow.className = "labels";
+    gRow.appendChild(document.createElement("th"));
+    const th0 = document.createElement("th"); th0.textContent = "Sentence"; lRow.appendChild(th0);
+    let i = 0;
+    while (i < systems.length) {
+      const g = systems[i].group || "";
+      let span = 1;
+      while (i + span < systems.length && (systems[i + span].group || "") === g) span++;
+      const gth = document.createElement("th"); gth.colSpan = span; gth.textContent = g;
+      gRow.appendChild(gth);
+      for (let j = i; j < i + span; j++) {
+        const s = systems[j];
+        const th = document.createElement("th");
+        th.textContent = s.label;
+        if (s.note) { const n = document.createElement("span"); n.className = "note"; n.textContent = s.note; th.appendChild(n); }
+        if (s.highlight) th.classList.add("hl");
+        lRow.appendChild(th);
+      }
+      i += span;
+    }
+    thead.appendChild(gRow); thead.appendChild(lRow); table.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+    ids.forEach(id => {
+      const tr = document.createElement("tr");
+      const td = document.createElement("td"); td.className = "sent";
+      td.innerHTML = '<span class="id">' + id + '</span><span class="zh">' + (D.SAMPLES[id] || "") + "</span>"
+        + (D.PINYIN && D.PINYIN[id] ? '<span class="py">' + D.PINYIN[id] + "</span>" : "");
+      if (gapKey && D.SCORES[id] && D.SCORES[id][gapKey] && D.SCORES[id]["Proposed"]) {
+        const gc = D.SCORES[id][gapKey][0] - D.SCORES[id]["Proposed"][0];
+        const gs = D.SCORES[id][gapKey][1] - D.SCORES[id]["Proposed"][1];
+        const lab = (D.SYSTEMS.find(x => x.key === gapKey) || {label: gapKey}).label.replace(/ \[\d+\]$/, "");
+        td.innerHTML += '<span class="tag">' + lab + " − ours: CER " + (gc > 0 ? "+" : "") + gc + ", SER " + (gs > 0 ? "+" : "") + gs + "</span>";
+      }
+      tr.appendChild(td);
+      systems.forEach(s => tr.appendChild(mediaCell(s, id)));
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+  }
+
+  const host = document.getElementById("demo-sections");
+  const byKey = Object.fromEntries(D.SYSTEMS.map(x => [x.key, x]));
+  (D.SECTIONS || []).forEach((sec, n) => {
+    const h = document.createElement("h3"); h.textContent = (n + 1) + ". " + sec.title; host.appendChild(h);
+    if (sec.desc) { const p = document.createElement("p"); p.className = "small"; p.textContent = sec.desc; host.appendChild(p); }
+    const hint = document.createElement("p"); hint.className = "swipe-hint";
+    hint.textContent = "Swipe sideways to see all systems. The sentence column stays pinned."; host.appendChild(hint);
+    const wrap = document.createElement("div"); wrap.className = "demo-wrap";
+    const t = document.createElement("table"); t.className = "demo";
+    buildTable(t, sec.systems.map(k => byKey[k]).filter(Boolean), sec.ids, sec.gap);
+    wrap.appendChild(t); host.appendChild(wrap);
+  });
+  const R = D.RECOGNIZER;
+  document.getElementById("recog").innerHTML =
+    "<b>Recognizer for all scores on this page:</b> " + R.model + " · <code>" + R.weights + "</code> · <code>" + R.decoding + "</code><br>" + R.note;
+
+  // Only one media element plays at a time.
+  document.addEventListener("play", e => {
+    document.querySelectorAll("audio, video").forEach(m => { if (m !== e.target) m.pause(); });
+  }, true);
+
+})();
+</script>
+</body>
+</html>
