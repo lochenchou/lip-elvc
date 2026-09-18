@@ -202,7 +202,7 @@ of video alone.
     <div class="t">Visual front-end: lip video → EL WavLM features</div>
     <p>A trainable AV-HuBERT&nbsp;<a href="#ref-avhubert">[4]</a> visual extractor, distilled from an audio teacher on
     normal speech (TMSV&nbsp;<a href="#ref-tmsv">[5]</a>), is fused with a
-    ResNet-18 + Transformer lip encoder.
+    lip encoder (3D convolution, ResNet-18, Transformer layers).
     The fused front-end predicts the WavLM-Large (layer 6) features of the EL
     recording made at the same moment.</p>
   </div>
@@ -212,16 +212,16 @@ of video alone.
     <p>An autoregressive Transformer (VTN / ETN recipe) converts the predicted
     features toward the target normal speaker and absorbs the duration mismatch,
     since EL speech is slower. It is initialized from the audio ETN&nbsp;<a href="#ref-etn">[2]</a> baseline and
-    fine-tuned end to end with the front-end on 240 parallel pairs. The back-end,
-    the baselines and the vocoder are built on the open-source
+    fine-tuned end to end with the front-end on 240 parallel pairs. The back-end
+    and the audio baselines are built on the open-source
     <a href="https://github.com/unilight/seq2seq-vc">seq2seq-vc</a> toolkit.</p>
   </div>
   <div class="step">
     <div class="n">3</div>
     <div class="t">Vocoder: NL WavLM → waveform</div>
     <p>A WavLM HiFi-GAN trained on COSPRO normal speech, kept frozen and shared
-    by our audio baselines and our proposed system. Nothing on the audio side is
-    adapted to the EL speaker.</p>
+    by our audio baselines and our proposed system. It is never fine-tuned on
+    our data and only ever generates normal speech.</p>
   </div>
 </div>
 
@@ -252,8 +252,8 @@ of video alone.
 <h2>Demo samples</h2>
 <p>
   Held-out TMHINT sentences, with Hanyu Pinyin under each transcript. The first
-  two columns are the 96&times;96 lip ROI that the model reads, once muxed with
-  the EL recording and once silent. The EL recording and the NL audio are two
+  two columns are the 88&times;88 grayscale lip ROI at 25 fps that the model
+  reads, once muxed with the EL recording and once silent. The EL recording and the NL audio are two
   separate takes of the same sentence by the same speaker, so their lengths
   differ. AVH-WS-FT is the fine-tuned audio-visual system of Chien et al.
   <a href="#ref-chien">[3]</a>, described above. Under every converted sample we print its CER / SER
@@ -279,9 +279,8 @@ of video alone.
 <p>
   This work builds on the
   <a href="https://github.com/unilight/seq2seq-vc"><b>seq2seq-vc</b></a> toolkit
-  by Wen-Chin Huang, which provides the VTN and ETN recipes, the seq2seq
-  back-end and the training pipeline that our audio baselines and our proposed
-  system share. We are grateful to the author for releasing it.
+  by Wen-Chin Huang, which provides the VTN and ETN recipes and the seq2seq
+  back-end that our audio baselines and our proposed system share. We are grateful to the author for releasing it.
 </p>
 
 <!-- ============================ REFERENCES ============================ -->
