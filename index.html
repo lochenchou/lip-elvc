@@ -149,11 +149,12 @@ input at inference. A trainable AV-HuBERT extractor, fused with a lip encoder
 and adapted end to end with the back-end, predicts the WavLM features an
 audio-driven system would read. From video alone the proposed system reaches
 62.3% character error rate (CER) on held-out sentences from one speaker,
-against 74.0% for the unprocessed EL recordings. It leads two audio-driven
-baselines by 7.2 and 4.2 points of CER and outperforms prior audio-visual
-systems on a shared subset. The two audio baselines share its back-end and
-its vocoder, so the difference comes from the input alone: WavLM features
-predicted from video can stand in for those extracted from the EL waveform. Its errors are also
+against 74.0% for the unprocessed EL recordings. It leads audio VTN by 7.2
+points of CER and matches audio ETN, 4.2 points ahead but within the confidence
+interval on 40 sentences, and it is ahead of the prior audio-visual system on a
+shared subset. The two audio baselines share its back-end and its vocoder, so
+the difference comes from the input alone: WavLM features predicted from video
+can stand in for those extracted from the EL waveform. Its errors are also
 closer to the reference than those of the audio baselines, and fall mostly on
 the syllable onset, on consonants that the lips do not show. That is the limit
 of video alone.
@@ -164,7 +165,7 @@ of video alone.
 <div class="callout">
   <strong>The problem of EL speech.</strong> The electrolarynx damages the acoustic signal
   before it is recorded, but it does not touch the articulators. How much of a
-  normal-speech (NL) utterance can be recovered from the
+  normal laryngeal (NL) utterance can be recovered from the
   <strong>EL speaker's lip motion alone</strong>, with no audio at all?
 </div>
 <p>
@@ -177,7 +178,7 @@ of video alone.
   complete pipeline with its own back-end and vocoder. It also extracts its
   visual features with a fine-tuned AV-HuBERT&nbsp;<a href="#ref-avhubert">[4]</a>, so the visual backbone is not
   what separates it from ours; the difference is that it additionally reads the
-  EL waveform, while ours reads the video only. Listen to the
+  EL waveform, while ours reads the video only. Watch the
   <em>EL silent lip ROI</em> column first. That is the entire input to our
   proposed system.
 </p>
@@ -236,7 +237,7 @@ of video alone.
     <tr><td>ResNet front-end only</td><td>V</td><td>82.8</td><td>80.0</td></tr>
     <tr><td>AVH extractor only</td><td>V</td><td>67.3</td><td>64.5</td></tr>
     <tr class="hl"><td>Proposed (both pathways)</td><td>V</td><td>62.3</td><td>57.5</td></tr>
-    <tr><td>&nbsp;&nbsp;extractor frozen</td><td>V</td><td>75.5</td><td>71.0</td></tr>
+    <tr><td>Proposed, extractor frozen</td><td>V</td><td>75.5</td><td>71.0</td></tr>
   </tbody>
 </table>
 <p class="small" style="text-align:center">
